@@ -48,6 +48,7 @@ architecture arc of vs_cpu_hw is
       port map(
 		    ir_code => micro_code,
 		        clk => clock,
+		        res => reset,
 			  ARLOAD => ARLOAD,
 			  PCLOAD => PCLOAD,
 				PCINC => PCINC, 

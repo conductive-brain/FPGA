@@ -4,7 +4,7 @@ use ieee.std_logic_1164.all;
 package sub_pack is
    
 	component counter_4bit is
-	  port(load, inc, clr, clk: in std_logic;
+	  port(load, inc, clr, clk, res: in std_logic;
 			             input: in std_logic_vector(3 downto 0);
 			            output: out std_logic_vector(3 downto 0)
 	);
@@ -77,7 +77,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity counter_4bit is
-   port(load, inc, clr, clk: in std_logic;
+   port(load, inc, clr, clk, res: in std_logic;
 			             input: in std_logic_vector(3 downto 0);
 			            output: out std_logic_vector(3 downto 0)
 	);
@@ -86,9 +86,11 @@ end counter_4bit;
 architecture arc of counter_4bit is
 	signal count: unsigned(3 downto 0);  
 	begin
-		process(clk)
+		process(clk, res)
 		begin
-			if rising_edge(clk) then
+			if res='1' then
+				count <= (others => '0');  -- FETCH1
+			elsif rising_edge(clk) then
 			if load='1' then
                count <=  unsigned(input);
             elsif clr='1' then

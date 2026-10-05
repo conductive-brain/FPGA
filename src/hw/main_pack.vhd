@@ -6,7 +6,7 @@ package main_pack is
 
    component hw_control_unit is
       port(               ir_code: in std_logic_vector(1 downto 0);
-	  	                        clk: in std_logic;		
+	  	                   clk, res: in std_logic;
 		     ARLOAD, PCLOAD, DRLOAD: out std_logic;
 		             IRLOAD, ACLOAD: out std_logic;
 		                     ALUSEL: out std_logic;
@@ -73,7 +73,7 @@ use work.sub_pack.all;
 
 entity hw_control_unit is
    port(               ir_code: in std_logic_vector(1 downto 0);
-	  	                     clk: in std_logic;		
+	  	                clk, res: in std_logic;
 		  ARLOAD, PCLOAD, DRLOAD: out std_logic;
 		          IRLOAD, ACLOAD: out std_logic;
 		                  ALUSEL: out std_logic;
@@ -93,6 +93,7 @@ architecture arc of hw_control_unit is
 				   inc => (lo(0) or lo(1) or lo(8) or lo(10)), 
 				   clr => (lo(9) or lo(11) or lo(12) or lo(14)),
 			      clk => clk,
+			      res => res,
 			    input => ('1' & ir_code & '0'),
 			   output => decoder_in
 			);
