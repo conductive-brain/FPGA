@@ -1,14 +1,15 @@
 -- Reset test for the hardwired CPU.
 -- Checks that reset puts the control unit in FETCH1 (0000) and that
 -- the CPU then steps through FETCH1 -> FETCH2 -> FETCH3.
--- Uses the Intel ROM model (altera_mf). Run from a folder that holds a
--- trimmed copy of external_memory.mif.
+-- Uses the simulation memory (tb/external_mem_sim.vhd), loaded with the
+-- hw original program.
 
 library ieee;
 use ieee.std_logic_1164.all;
 
 library uvvm_util;
 context uvvm_util.uvvm_util_context;
+use work.mem_sim_pkg.all;
 
 entity tb_reset_hw is
 end entity;
@@ -43,6 +44,9 @@ begin
     alias cu_state is <<signal .tb_reset_hw.dut.control_unit.decoder_in : std_logic_vector(3 downto 0)>>;
   begin
     log(ID_LOG_HDR, "Reset test, hardwired CPU");
+	     -- Load the hw original program (same bytes as src/hw/external_memory.mif)
+    sim_mem <= (0 => x"C0", 1 => x"C0", 2 => x"05", 3 => x"46",
+                4 => x"84", 5 => x"08", 6 => x"02", others => x"00");
 
     -- Reset is active from time 0. Check during reset, between clock edges.
     wait until rising_edge(clock);
@@ -61,6 +65,7 @@ begin
     wait for C_CLK_PERIOD / 4;
     check_value(cu_state, "0010", ERROR, "State after 2nd clock edge is FETCH3");
     check_value(PCout, "000001", ERROR, "PC incremented in FETCH2");
+	 check_value(DRout, x"C0", ERROR, "DR holds the first instruction, M[0]");
 
     report_alert_counters(FINAL);
     std.env.stop;
