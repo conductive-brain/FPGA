@@ -1,0 +1,78 @@
+-- Directed tests for the hardwired CPU.
+-- Loads a hand-written program into the simulation memory, runs it one
+-- instruction at a time, and checks AC and PC after each instruction.
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+library uvvm_util;
+context uvvm_util.uvvm_util_context;
+use work.mem_sim_pkg.all;
+
+entity tb_cpu_hw is
+end entity;
+
+architecture sim of tb_cpu_hw is
+  constant C_CLK_PERIOD : time := 20 ns;
+  -- The longest instruction takes 5 clock cycles (guide, section 6).
+  -- Allow twice that before calling it stuck.
+  constant C_MAX_INSTR_TIME : time := 10 * C_CLK_PERIOD;
+
+  signal ARout, PCout          : std_logic_vector(5 downto 0);
+  signal DRout, ACout, dataBus : std_logic_vector(7 downto 0);
+  signal IRout                 : std_logic_vector(1 downto 0);
+  signal mOP                   : std_logic_vector(10 downto 0);
+  signal clock                 : std_logic := '0';
+  signal reset                 : std_logic := '1';
+begin
+  clock <= not clock after C_CLK_PERIOD / 2;
+
+  dut : entity work.vs_cpu_hw
+    port map (
+      ARout   => ARout,
+      PCout   => PCout,
+      DRout   => DRout,
+      ACout   => ACout,
+      IRout   => IRout,
+      dataBus => dataBus,
+      clock   => clock,
+      reset   => reset,
+      mOP     => mOP
+    );
+
+  p_main : process
+    -- The control unit's state, read from inside the CPU
+    alias cu_state is <<signal .tb_cpu_hw.dut.control_unit.decoder_in : std_logic_vector(3 downto 0)>>;
+
+    -- Let the CPU run one instruction. Every instruction ends by going back
+    -- to FETCH1 (0000), so wait for that. Then wait a quarter clock period,
+    -- so the registers show their new values.
+    procedure run_instruction is
+    begin
+      wait until cu_state = "0000" for C_MAX_INSTR_TIME;
+      check_value(cu_state, "0000", ERROR, "Instruction finished in time");
+      wait for C_CLK_PERIOD / 4;
+    end procedure;
+
+  begin
+    log(ID_LOG_HDR, "Directed test 1: hw original program");
+
+    -- Load the hw original program (same bytes as src/hw/external_memory.mif)
+    sim_mem <= (0 => x"C0", 1 => x"C0", 2 => x"05", 3 => x"46",
+                4 => x"84", 5 => x"08", 6 => x"02", others => x"00");
+
+    -- Hold reset until the first clock edge, then release it between edges
+    wait until rising_edge(clock);
+    wait for C_CLK_PERIOD / 4;
+    reset <= '0';
+
+    -- Address 0: INC
+    run_instruction;
+    check_value(ACout, x"01", ERROR, "INC: AC = 0x00 + 1");
+    check_value(PCout, "000001", ERROR, "INC: PC = 1");
+
+    report_alert_counters(FINAL);
+    std.env.stop;
+    wait;
+  end process;
+end architecture;
