@@ -1,0 +1,24 @@
+# GHDL / simulation output
+*.cf
+*.o
+*.ghw
+*.vcd
+*.fst
+sim_out/
+
+# ModelSim
+work/
+transcript
+*.wlf
+modelsim.ini
+
+# Quartus build output
+db/
+incremental_db/
+output_files/
+simulation/
+*.qws
+*.bak
+
+# Private notes, never committed
+private/

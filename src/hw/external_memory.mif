@@ -1,0 +1,15 @@
+-- external_mem.mif
+ depth = 64; -- 6-bit address ---> 0-64 dec 
+ width = 8; -- 8-bit data 
+ address_radix = dec; 
+ data_radix = hex; 
+ content 
+ begin 
+ 0 : C0 ; 
+ 1 : C0 ; 
+ 2 : 05 ; 
+ 3 : 46 ; 
+ 4 : 84 ; 
+ 5 : 08 ; 
+ 6 : 02 ;
+ end; 
