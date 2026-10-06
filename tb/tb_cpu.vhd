@@ -116,6 +116,30 @@ begin
     check_value(ACout, x"60", ERROR, "ADD 5: AC = 0x27 + 0x39 = 0x60");
     check_value(PCout, "000010", ERROR, "ADD 5: PC = 2");
 
+    log(ID_LOG_HDR, "Directed test 3: INC from 0xFF to 0x00");
+
+    -- Reset the CPU and load a new program
+    reset <= '1';
+    sim_mem <= (0 => x"04", 1 => x"C0", 2 => x"C0", 3 => x"83",
+                4 => x"FF", others => x"00");
+    wait until rising_edge(clock);
+    wait for C_CLK_PERIOD / 4;
+    reset <= '0';
+
+    -- Address 0: ADD 4 (M[4] = 0xFF), so AC = 0xFF
+    run_instruction;
+    check_value(ACout, x"FF", ERROR, "ADD 4: AC = 0x00 + 0xFF");
+    check_value(PCout, "000001", ERROR, "ADD 4: PC = 1");
+
+    -- Address 1: INC, AC wraps from 0xFF to 0x00
+    run_instruction;
+    check_value(ACout, x"00", ERROR, "INC: AC = 0xFF + 1 wraps to 0x00");
+    check_value(PCout, "000010", ERROR, "INC: PC = 2");
+
+    -- Address 2: INC again, counting goes on from 0x00
+    run_instruction;
+    check_value(ACout, x"01", ERROR, "INC: AC = 0x00 + 1");
+    check_value(PCout, "000011", ERROR, "INC: PC = 3");
     report_alert_counters(FINAL);
     std.env.stop;
     wait;
