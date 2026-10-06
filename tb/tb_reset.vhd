@@ -1,4 +1,4 @@
--- Reset test for the hardwired CPU.
+-- Reset test for the CPU in tb/cpu_dut_<cpu>.vhd.
 -- Checks that reset puts the control unit in FETCH1 (0000) and that
 -- the CPU then steps through FETCH1 -> FETCH2 -> FETCH3.
 -- Uses the simulation memory (tb/external_mem_sim.vhd), loaded with the
@@ -11,10 +11,10 @@ library uvvm_util;
 context uvvm_util.uvvm_util_context;
 use work.mem_sim_pkg.all;
 
-entity tb_reset_hw is
+entity tb_reset is
 end entity;
 
-architecture sim of tb_reset_hw is
+architecture sim of tb_reset is
   constant C_CLK_PERIOD : time := 20 ns;
 
   signal ARout, PCout          : std_logic_vector(5 downto 0);
@@ -23,10 +23,11 @@ architecture sim of tb_reset_hw is
   signal mOP                   : std_logic_vector(10 downto 0);
   signal clock                 : std_logic := '0';
   signal reset                 : std_logic := '1';
+  signal cu_state              : std_logic_vector(3 downto 0);  -- control unit state
 begin
   clock <= not clock after C_CLK_PERIOD / 2;
 
-  dut : entity work.vs_cpu_hw
+  dut : entity work.cpu_dut
     port map (
       ARout   => ARout,
       PCout   => PCout,
@@ -36,14 +37,13 @@ begin
       dataBus => dataBus,
       clock   => clock,
       reset   => reset,
-      mOP     => mOP
+      mOP     => mOP,
+      cu_state => cu_state
     );
 
   p_main : process
-    -- The control unit's state, read from inside the CPU
-    alias cu_state is <<signal .tb_reset_hw.dut.control_unit.decoder_in : std_logic_vector(3 downto 0)>>;
   begin
-    log(ID_LOG_HDR, "Reset test, hardwired CPU");
+    log(ID_LOG_HDR, "Reset test");
 	     -- Load the hw original program (same bytes as src/hw/external_memory.mif)
     sim_mem <= (0 => x"C0", 1 => x"C0", 2 => x"05", 3 => x"46",
                 4 => x"84", 5 => x"08", 6 => x"02", others => x"00");

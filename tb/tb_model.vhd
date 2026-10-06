@@ -1,4 +1,4 @@
--- Compares the hardwired CPU with the reference model (tb/cpu_model_pkg.vhd).
+-- Compares the CPU in tb/cpu_dut_<cpu>.vhd with the reference model (tb/cpu_model_pkg.vhd).
 -- For each program: reset the CPU, load the program, then after every
 -- instruction check that the CPU's AC and PC equal the model's.
 -- Programs: the original program, the carry program, then G_NUM_RANDOM random
@@ -15,7 +15,7 @@ context uvvm_util.uvvm_util_context;
 use work.mem_sim_pkg.all;
 use work.cpu_model_pkg.all;
 
-entity tb_model_hw is
+entity tb_model is
   generic (
     G_SEED           : positive := 1;    -- change it to get other random programs
     G_NUM_RANDOM     : natural  := 100;  -- how many random programs
@@ -23,11 +23,11 @@ entity tb_model_hw is
   );
 end entity;
 
-architecture sim of tb_model_hw is
+architecture sim of tb_model is
   constant C_CLK_PERIOD     : time := 20 ns;
   constant C_MAX_INSTR_TIME : time := 10 * C_CLK_PERIOD;
 
-  -- The two programs from the directed tests (tb_cpu_hw.vhd)
+  -- The two programs from the directed tests (tb_cpu.vhd)
   constant C_ORIG_PROGRAM : mem_t := (0 => x"C0", 1 => x"C0", 2 => x"05", 3 => x"46",
                                       4 => x"84", 5 => x"08", 6 => x"02", others => x"00");
   constant C_CARRY_PROGRAM : mem_t := (0 => x"04", 1 => x"05", 2 => x"82",
@@ -39,10 +39,11 @@ architecture sim of tb_model_hw is
   signal mOP                   : std_logic_vector(10 downto 0);
   signal clock                 : std_logic := '0';
   signal reset                 : std_logic := '1';
+  signal cu_state              : std_logic_vector(3 downto 0);  -- control unit state
 begin
   clock <= not clock after C_CLK_PERIOD / 2;
 
-  dut : entity work.vs_cpu_hw
+  dut : entity work.cpu_dut
     port map (
       ARout   => ARout,
       PCout   => PCout,
@@ -52,13 +53,13 @@ begin
       dataBus => dataBus,
       clock   => clock,
       reset   => reset,
-      mOP     => mOP
+      mOP     => mOP,
+      cu_state => cu_state
     );
 
   p_main : process
-    alias cu_state is <<signal .tb_model_hw.dut.control_unit.decoder_in : std_logic_vector(3 downto 0)>>;
 
-    -- Let the CPU run one instruction (same as in tb_cpu_hw.vhd)
+    -- Let the CPU run one instruction (same as in tb_cpu.vhd)
     procedure run_instruction is
     begin
       wait until cu_state = "0000" for C_MAX_INSTR_TIME;

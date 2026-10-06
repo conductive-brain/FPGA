@@ -1,4 +1,4 @@
--- Directed tests for the hardwired CPU.
+-- Directed tests for the CPU in tb/cpu_dut_<cpu>.vhd.
 -- Loads a hand-written program into the simulation memory, runs it one
 -- instruction at a time, and checks AC and PC after each instruction.
 
@@ -9,10 +9,10 @@ library uvvm_util;
 context uvvm_util.uvvm_util_context;
 use work.mem_sim_pkg.all;
 
-entity tb_cpu_hw is
+entity tb_cpu is
 end entity;
 
-architecture sim of tb_cpu_hw is
+architecture sim of tb_cpu is
   constant C_CLK_PERIOD : time := 20 ns;
   -- The longest instruction takes 5 clock cycles (guide, section 6).
   -- Allow twice that before calling it stuck.
@@ -24,10 +24,11 @@ architecture sim of tb_cpu_hw is
   signal mOP                   : std_logic_vector(10 downto 0);
   signal clock                 : std_logic := '0';
   signal reset                 : std_logic := '1';
+  signal cu_state              : std_logic_vector(3 downto 0);  -- control unit state
 begin
   clock <= not clock after C_CLK_PERIOD / 2;
 
-  dut : entity work.vs_cpu_hw
+  dut : entity work.cpu_dut
     port map (
       ARout   => ARout,
       PCout   => PCout,
@@ -37,12 +38,11 @@ begin
       dataBus => dataBus,
       clock   => clock,
       reset   => reset,
-      mOP     => mOP
+      mOP     => mOP,
+      cu_state => cu_state
     );
 
   p_main : process
-    -- The control unit's state, read from inside the CPU
-    alias cu_state is <<signal .tb_cpu_hw.dut.control_unit.decoder_in : std_logic_vector(3 downto 0)>>;
 
     -- Let the CPU run one instruction. Every instruction ends by going back
     -- to FETCH1 (0000), so wait for that. Then wait a quarter clock period,
