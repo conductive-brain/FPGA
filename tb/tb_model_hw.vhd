@@ -1,10 +1,14 @@
 -- Compares the hardwired CPU with the reference model (tb/cpu_model_pkg.vhd).
 -- For each program: reset the CPU, load the program, then after every
 -- instruction check that the CPU's AC and PC equal the model's.
+-- Programs: the original program, the carry program, then G_NUM_RANDOM random
+-- programs. Random program number k uses the seeds (G_SEED, k), so the same
+-- G_SEED always gives the same programs.
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.math_real.all;
 
 library uvvm_util;
 context uvvm_util.uvvm_util_context;
@@ -12,6 +16,11 @@ use work.mem_sim_pkg.all;
 use work.cpu_model_pkg.all;
 
 entity tb_model_hw is
+  generic (
+    G_SEED           : positive := 1;    -- change it to get other random programs
+    G_NUM_RANDOM     : natural  := 100;  -- how many random programs
+    G_INSTR_PER_PROG : positive := 200   -- instructions per random program
+  );
 end entity;
 
 architecture sim of tb_model_hw is
@@ -68,7 +77,7 @@ begin
       variable m_pc : unsigned(5 downto 0) := (others => '0');
       variable m_ac : unsigned(7 downto 0) := (others => '0');
     begin
-      log(ID_LOG_HDR, "CPU vs model: " & name);
+      log(ID_SEQUENCER, "CPU vs model: " & name);
 
       -- Reset the CPU and load the program
       reset   <= '1';
@@ -85,9 +94,37 @@ begin
       end loop;
     end procedure;
 
+    -- Fill a program with 64 random bytes. Every byte is a valid
+    -- instruction on this CPU, so any random program can run.
+    procedure random_program(
+      variable seed1, seed2 : inout positive;
+      variable program      : out   mem_t
+    ) is
+      variable r : real;  -- random number between 0.0 and 1.0
+    begin
+      for addr in 0 to 63 loop
+        uniform(seed1, seed2, r);
+        program(addr) := std_logic_vector(to_unsigned(integer(trunc(r * 256.0)), 8));
+      end loop;
+    end procedure;
+
+    variable seed1, seed2 : positive;
+    variable program      : mem_t;
+
   begin
+    -- Print only errors and summaries, not every passing check
+    disable_log_msg(ID_POS_ACK);
     run_and_compare("original program", C_ORIG_PROGRAM,  10);
     run_and_compare("carry program",    C_CARRY_PROGRAM, 10);
+
+    log(ID_LOG_HDR, "Random programs: " & to_string(G_NUM_RANDOM) & " programs, "
+                    & to_string(G_INSTR_PER_PROG) & " instructions each, G_SEED = " & to_string(G_SEED));
+    for k in 1 to G_NUM_RANDOM loop
+      seed1 := G_SEED;
+      seed2 := k;
+      random_program(seed1, seed2, program);
+      run_and_compare("random program " & to_string(k), program, G_INSTR_PER_PROG);
+    end loop;
 
     report_alert_counters(FINAL);
     std.env.stop;
