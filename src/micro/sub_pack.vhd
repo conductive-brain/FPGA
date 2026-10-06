@@ -65,8 +65,16 @@ entity adder is
 	);
 end adder;
 architecture dtf of adder is
+   signal carry: std_logic_vector(n downto 0);
    begin
-      S <= A xor B;
+   carry(0) <= '0';
+   gen: for i in 0 to n-1 generate
+      begin
+      S(i) <= A(i) xor B(i) xor carry(i);
+      carry(i+1) <= ( A(i) and B(i)) or
+                    ( A(i) and carry(i)) or
+                    ( B(i) and carry(i));
+   end generate;
 end dtf;
 
 

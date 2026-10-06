@@ -7,8 +7,7 @@ package main_pack is
    component micro_seq is
 	   port( ir_code: in std_logic_vector(1 downto 0);
 	        micro_op: out std_logic_vector(10 downto 0);
-		          clk: in std_logic
-		  );
+		          clk, res: in std_logic);
    end component;
 	
 	component data_bus is
@@ -70,12 +69,11 @@ use work.sub_pack.all;
 entity micro_seq is
    port( ir_code: in std_logic_vector(1 downto 0);
 	     micro_op: out std_logic_vector(10 downto 0);
-		       clk: in std_logic
-		  );
+		       clk, res: in std_logic		  );
 end micro_seq;
 
 architecture arc of micro_seq is
-   signal mem_in: std_logic_vector(3 downto 0);
+   signal next_addr, mem_in: std_logic_vector(3 downto 0);
 	signal mem_out: std_logic_vector(15 downto 0);
 	begin
 	   micro_mux: mux2to1_nbit
@@ -84,8 +82,11 @@ architecture arc of micro_seq is
 			   in1 => '1' & ir_code & '0' ,
 			   in0 => mem_out(3 downto 0) ,
 			     S => mem_out(15) ,
-			     Y => mem_in
-		);	
+			     Y => next_addr
+		);
+		-- Reset: while res is 1, the ROM stores address 0000 (FETCH1)
+		-- at the next rising clock edge
+		mem_in <= "0000" when res = '1' else next_addr;
 		memory: rom_microp
 			port map(
 				address =>mem_in ,

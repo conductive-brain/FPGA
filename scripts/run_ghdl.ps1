@@ -15,7 +15,8 @@ $tests = @('tb_reset', 'tb_cpu', 'tb_model')
 # The CPU versions and their design files. Each one also has a wrapper,
 # tb\cpu_dut_<name>.vhd, that the tests connect to.
 $cpus = [ordered]@{
-  'hw' = @("$root\src\hw\sub_pack.vhd", "$root\src\hw\main_pack.vhd", "$root\src\hw\vs_cpu_hw.vhd")
+  'hw'    = @("$root\src\hw\sub_pack.vhd", "$root\src\hw\main_pack.vhd", "$root\src\hw\vs_cpu_hw.vhd")
+  'micro' = @("$root\src\micro\sub_pack.vhd", "$root\src\micro\main_pack.vhd", "$root\tb\rom_microp_sim.vhd", "$root\src\micro\vs_cpu.vhd")
 }
 
 foreach ($cpu in $cpus.Keys) {
@@ -26,6 +27,9 @@ foreach ($cpu in $cpus.Keys) {
   Remove-Item -Recurse -Force $run -ErrorAction SilentlyContinue
   New-Item -ItemType Directory -Force $run | Out-Null
 
+  # The micro version's ROM model (tb\rom_microp_sim.vhd) reads microcode.mif
+  # from the run folder
+  if (Test-Path "$root\src\$cpu\microcode.mif") { Copy-Item "$root\src\$cpu\microcode.mif" $run }
   # All files, in the order GHDL needs them: simulation memory and model,
   # the CPU, its wrapper, then the tests
   $files  = @("$root\tb\mem_sim_pkg.vhd", "$root\tb\external_mem_sim.vhd", "$root\tb\cpu_model_pkg.vhd")

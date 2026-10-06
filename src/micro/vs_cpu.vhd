@@ -43,7 +43,8 @@ architecture arc of vs_cpu is
       port map(
 		    ir_code => dataBus(7 downto 6),
 	      micro_op => mOP,
-		        clk => clock
+		        clk => clock,
+		        res => reset
 		  );
 		  
 	ar: pipo_nbit
