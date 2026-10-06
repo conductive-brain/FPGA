@@ -70,6 +70,31 @@ begin
     run_instruction;
     check_value(ACout, x"01", ERROR, "INC: AC = 0x00 + 1");
     check_value(PCout, "000001", ERROR, "INC: PC = 1");
+	 
+    -- Address 1: INC
+    run_instruction;
+    check_value(ACout, x"02", ERROR, "INC: AC = 0x01 + 1");
+    check_value(PCout, "000010", ERROR, "INC: PC = 2");
+
+    -- Address 2: ADD 5 (M[5] = 0x08)
+    run_instruction;
+    check_value(ACout, x"0A", ERROR, "ADD 5: AC = 0x02 + 0x08");
+    check_value(PCout, "000011", ERROR, "ADD 5: PC = 3");
+
+    -- Address 3: AND 6 (M[6] = 0x02)
+    run_instruction;
+    check_value(ACout, x"02", ERROR, "AND 6: AC = 0x0A and 0x02");
+    check_value(PCout, "000100", ERROR, "AND 6: PC = 4");
+
+    -- Address 4: JMP 4
+    run_instruction;
+    check_value(ACout, x"02", ERROR, "JMP 4: AC unchanged");
+    check_value(PCout, "000100", ERROR, "JMP 4: PC = 4");
+
+    -- Address 4 again: JMP 4 jumps to itself, so nothing changes
+    run_instruction;
+    check_value(ACout, x"02", ERROR, "JMP 4 (loop): AC unchanged");
+    check_value(PCout, "000100", ERROR, "JMP 4 (loop): PC = 4");
 
     report_alert_counters(FINAL);
     std.env.stop;
