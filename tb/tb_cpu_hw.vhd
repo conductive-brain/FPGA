@@ -95,6 +95,26 @@ begin
     run_instruction;
     check_value(ACout, x"02", ERROR, "JMP 4 (loop): AC unchanged");
     check_value(PCout, "000100", ERROR, "JMP 4 (loop): PC = 4");
+	 
+    log(ID_LOG_HDR, "Directed test 2: ADD with carries (0x27 + 0x39)");
+
+    -- Reset the CPU and load a new program
+    reset <= '1';
+    sim_mem <= (0 => x"04", 1 => x"05", 2 => x"82",
+                4 => x"27", 5 => x"39", others => x"00");
+    wait until rising_edge(clock);
+    wait for C_CLK_PERIOD / 4;
+    reset <= '0';
+
+    -- Address 0: ADD 4 (M[4] = 0x27), no carry
+    run_instruction;
+    check_value(ACout, x"27", ERROR, "ADD 4: AC = 0x00 + 0x27");
+    check_value(PCout, "000001", ERROR, "ADD 4: PC = 1");
+
+    -- Address 1: ADD 5 (M[5] = 0x39), carries in 6 of 8 bits
+    run_instruction;
+    check_value(ACout, x"60", ERROR, "ADD 5: AC = 0x27 + 0x39 = 0x60");
+    check_value(PCout, "000010", ERROR, "ADD 5: PC = 2");
 
     report_alert_counters(FINAL);
     std.env.stop;
