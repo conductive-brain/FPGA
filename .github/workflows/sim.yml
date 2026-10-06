@@ -1,0 +1,47 @@
+# GitHub Actions workflow: runs all GHDL tests on every push.
+# GitHub reads every .yml file in the folder .github/workflows and runs it
+# on its own Linux computer. The run is green if every step ends with exit
+# code 0, and red if any step fails.
+
+name: GHDL tests
+
+# When to run
+on:
+  push:               # every push, on any branch
+  pull_request:       # every pull request
+  workflow_dispatch:  # a "Run workflow" button on GitHub, to start it by hand
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15   # stop a run that hangs
+    env:
+      UVVM_VERSION: "2026.03.20"                    # same UVVM release as on the PC
+      UVVM_LIB: ${{ github.workspace }}/uvvm_lib    # where the compiled UVVM goes; run_ghdl.sh reads it
+
+    steps:
+      - name: Get the project files
+        uses: actions/checkout@v7
+
+      - name: Install GHDL 6.0.0 (mcode)
+        uses: ghdl/setup-ghdl@v1
+        with:
+          version: 6.0.0
+          backend: mcode
+
+      - name: Download UVVM ${{ env.UVVM_VERSION }}
+        run: git clone --depth 1 --branch "$UVVM_VERSION" https://github.com/UVVM/UVVM.git uvvm_src
+
+      - name: Compile the UVVM utility library
+        run: |
+          out="$UVVM_LIB/uvvm_util/v08"
+          mkdir -p "$out"
+          # compile_order.txt lists the source files in the order GHDL needs them
+          grep -v '^#' uvvm_src/uvvm_util/script/compile_order.txt | tr -d '\r' | while read -r f; do
+            if [ -n "$f" ]; then
+              ghdl -a --std=08 -frelaxed --work=uvvm_util --workdir="$out" "uvvm_src/uvvm_util/script/$f" || exit 1
+            fi
+          done
+
+      - name: Run all tests (hw and micro)
+        run: bash scripts/run_ghdl.sh
