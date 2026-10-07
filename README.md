@@ -101,11 +101,31 @@ Random programs with G_SEED = 1, same counts on both CPUs:
 | Programs that end in a JMP to itself             | 11 of 100                                  |
 | Instructions run before that point               | 17905 of 20000                             |
 
-## Fmax
+## Timing
 
-Quartus Prime Lite 18.1, device 5CSXFC6D6F31C6, slow 1100 mV 85 °C model, one compile per entry:
+Quartus Prime Lite 18.1, device 5CSXFC6D6F31C6, Timing Analyzer with the slow 1100 mV 85 °C model.
 
-|       | Before (XOR adder, no reset) | After the fixes |
+### Constraints
+
+`src/hw/vs_cpu_hw.sdc` and `src/micro/vs_cpu.sdc` set a 20 ns clock, the board's 50 MHz oscillator (CLOCK_50), and
+add Intel's clock uncertainty. `reset` (a push-button) and the outputs (they only show the registers) are not timed.
+The projects have no pin assignments yet; the clock input is meant for CLOCK_50.
+
+### Results at 50 MHz
+
+| CPU   | Setup slack | Hold slack | Fmax of this build |
+|-------|-------------|------------|--------------------|
+| hw    | +13.638 ns  | +0.333 ns  | 157.18 MHz         |
+| micro | +12.581 ns  | +0.332 ns  | 134.79 MHz         |
+
+Both CPUs meet the 50 MHz clock with more than 12 ns to spare, and no input or output is left unconstrained. Fmax is
+lower than in the table below because the Fitter stops optimizing once a design meets its target.
+
+### Fmax before and after the fixes
+
+Compiled without an SDC file, so against Quartus's default 1 ns target:
+
+| CPU   | Before (XOR adder, no reset) | After the fixes |
 |-------|------------------------------|-----------------|
 | hw    | 258.13 MHz                   | 226.55 MHz      |
 | micro | 203.67 MHz                   | 182.22 MHz      |
@@ -114,10 +134,21 @@ The micro version's slowest path starts at the M10K microcode ROM. In a trial wi
 table, Quartus built it from logic and micro Fmax (XOR adder) rose from 203.67 MHz to 250.5 MHz. The board design
 keeps the M10K ROM.
 
+### The slowest path (hw, 4 ns experiment)
+
+With a 4 ns target the hw build reaches 212.09 MHz. Its worst path runs from the program memory through the data bus
+and the adder into AC and needs 4.715 ns: 2.263 ns in the memory block (its clock arrives late, then the read),
+1.380 ns in wires, 0.683 ns in logic, the rest in the AC register and the clock uncertainty.
+
+The CPU never uses this path within one clock cycle: AC loads only in ADD2 and AND2, when the bus carries DR, not the
+memory. The slowest path it does use, from the control unit to AC, would allow about 234 MHz in that build. A timing
+exception (`set_false_path`) could tell Quartus so. The SDC files have none: at 50 MHz both CPUs have more than
+12 ns of slack, and a wrong exception would hide real failures that no simulation catches.
+
 ## What the tests do not check
 
 - Intel's ROM blocks themselves. The tests use models with the same ports and timing.
-- Timing. GHDL simulates logic without delays; Fmax comes from the Quartus Timing Analyzer.
+- Timing. GHDL simulates logic without delays. The Quartus Timing Analyzer checks timing separately (see Timing).
 
 ## Running the tests
 
@@ -171,4 +202,5 @@ ghdl -r --std=08 -frelaxed -P"$UVVM_LIB" tb_model -gG_SEED=7
 
 ## Building for the board
 
-Open `src/hw/vs_cpu_hw.qpf` or `src/micro/vs_cpu.qpf` in Quartus Prime Lite 18.1.
+Open `src/hw/vs_cpu_hw.qpf` or `src/micro/vs_cpu.qpf` in Quartus Prime Lite 18.1. Each project includes its SDC
+file. Pin assignments still have to be added before loading a design onto the board.
