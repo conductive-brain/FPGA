@@ -10,8 +10,8 @@
 # Project folder = the folder above this script's folder
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
-# GHDL settings (PROJECT_GUIDE.md, section 4)
-# User folder: USERPROFILE on Windows (HOME can point elsewhere there),
+# GHDL settings (README.md, "Running the tests")
+# User folder: USERPROFILE on Windows (some Windows programs change HOME),
 # HOME on Linux
 user_dir="${USERPROFILE:-$HOME}"
 uvvm_lib="${UVVM_LIB:-$user_dir/tools/uvvm_ghdl}"

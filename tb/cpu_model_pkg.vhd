@@ -1,6 +1,6 @@
 -- Reference model of the Very Simple CPU, at instruction level.
 -- One call to model_step runs one instruction. No clock, no states:
--- only the rules from the instruction table (PROJECT_GUIDE.md, section 6).
+-- only the rules from the instruction table (README.md, "The CPU").
 -- It uses VHDL's own "+", not the CPU's adder, so a bug in the CPU's
 -- adder shows up as a difference between the CPU and the model.
 

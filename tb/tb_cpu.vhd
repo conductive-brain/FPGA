@@ -14,7 +14,7 @@ end entity;
 
 architecture sim of tb_cpu is
   constant C_CLK_PERIOD : time := 20 ns;
-  -- The longest instruction takes 5 clock cycles (guide, section 6).
+  -- The longest instruction takes 5 clock cycles (README.md, "The CPU").
   -- Allow twice that before calling it stuck.
   constant C_MAX_INSTR_TIME : time := 10 * C_CLK_PERIOD;
 

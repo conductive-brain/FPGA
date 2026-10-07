@@ -6,7 +6,7 @@
 # Project folder = the folder above this script's folder
 $root = Split-Path -Parent $PSScriptRoot
 
-# GHDL settings (PROJECT_GUIDE.md, section 4)
+# GHDL settings (README.md, "Running the tests")
 $opts = @('--std=08','-frelaxed',"-P$env:USERPROFILE\tools\uvvm_ghdl")
 
 # The tests, in the order they run. Each one is tb\<name>.vhd
