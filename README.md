@@ -215,3 +215,8 @@ ghdl -r --std=08 -frelaxed -P"$UVVM_LIB" tb_model -gG_SEED=7
 
 Open `src/hw/vs_cpu_hw.qpf` or `src/micro/vs_cpu.qpf` in Quartus Prime Lite 18.1. Each project includes its SDC
 file. Pin assignments still have to be added before loading a design onto the board.
+
+## License
+
+MIT, see [LICENSE](LICENSE). The Quartus project files (`*.qpf`, `*.qsf`) start with Intel's standard notice,
+which Quartus writes into the files it generates.
