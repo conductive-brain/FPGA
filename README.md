@@ -42,7 +42,8 @@ Each instruction starts with three fetch states (FETCH1 to FETCH3) and ends by r
 src/hw/        hardwired CPU and its Quartus project
 src/micro/     microprogrammed CPU and its Quartus project
 tb/            testbench, simulation models, reference model
-scripts/       run_ghdl.ps1 (Windows) and run_ghdl.sh (Linux, Git Bash): run every test on both CPUs
+scripts/       run_ghdl.ps1 (Windows) and run_ghdl.sh (Linux, Git Bash): run every test on both CPUs in GHDL;
+               run_modelsim.ps1: the same in ModelSim
 .github/       GitHub Actions workflow
 ```
 
@@ -187,6 +188,16 @@ Linux or Git Bash (UVVM in `$UVVM_LIB`, default `<user folder>/tools/uvvm_ghdl`)
 ```bash
 bash scripts/run_ghdl.sh
 ```
+
+ModelSim (Intel FPGA Starter Edition 10.5b, part of Quartus Prime Lite 18.1), Windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run_modelsim.ps1
+```
+
+The first run compiles `uvvm_util` for ModelSim into `%USERPROFILE%\tools\uvvm_modelsim`. ModelSim returns exit
+code 0 even when a test fails, so the script decides from each test's output: a test passes only if its output
+contains "Simulation SUCCESS" and no "ERROR #". All tests pass in ModelSim, with the same coverage counts as in GHDL.
 
 Run the model test with other random programs, for example seed 7, after a normal run:
 
