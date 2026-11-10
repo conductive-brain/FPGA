@@ -5,7 +5,7 @@
 An 8-bit CPU in VHDL in two versions, one with a hardwired and one with a microprogrammed control unit, and a
 self-checking UVVM testbench that verifies both. The tests run in GHDL on every push through GitHub Actions.
 
-I designed the CPU and ran it on a Cyclone V board (Terasic DE10-Standard). At the time I checked it
+I designed the CPU for a Cyclone V board (Terasic DE10-Standard). At the time I checked it
 by reading simulation waveforms. This repository adds automated verification: directed tests, a reference model,
 random programs and coverage. The original design had four problems that the waveforms had not shown. Each fix is a separate
 commit together with the test that shows the problem.
@@ -76,8 +76,8 @@ scripts/       run_ghdl.ps1 (Windows) and run_ghdl.sh (Linux, Git Bash): run eve
 
 ## Problems in the original design and their fixes
 
-1. **The hw control unit's state counter had no reset.** The board worked only because the FPGA powers up with
-   every register at 0.
+1. **The hw control unit's state counter had no reset.** On an FPGA the counter still starts at 0, because the FPGA
+   powers up with every register at 0.
    - How it showed up: `tb_reset` saw state `UUUU` instead of 0000 (FETCH1).
    - Fix: 0a3c339
 2. **The original adder computed A xor B instead of A + B** (hw and micro). XOR raised Fmax, and the original
@@ -118,7 +118,6 @@ Quartus Prime Lite 18.1, device 5CSXFC6D6F31C6, Timing Analyzer with the slow 11
 
 `src/hw/vs_cpu_hw.sdc` and `src/micro/vs_cpu.sdc` set a 20 ns clock, the board's 50 MHz oscillator (CLOCK_50), and
 add Intel's clock uncertainty. `reset` (a push-button) and the outputs (they only show the registers) are not timed.
-The projects have no pin assignments yet; the clock input is meant for CLOCK_50.
 
 ### Results at 50 MHz
 
@@ -227,7 +226,7 @@ ghdl -r --std=08 -frelaxed -P"$UVVM_LIB" tb_model -gG_SEED=7
 ## Building for the board
 
 Open `src/hw/vs_cpu_hw.qpf` or `src/micro/vs_cpu.qpf` in Quartus Prime Lite 18.1. Each project includes its SDC
-file. Pin assignments still have to be added before loading a design onto the board.
+file.
 
 ## License
 
