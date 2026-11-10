@@ -1,20 +1,29 @@
-# GitHub Actions workflow: runs all GHDL tests on every push.
-# GitHub reads every .yml file in the folder .github/workflows and runs it
-# on its own Linux computer. The run is green if every step ends with exit
+# GitHub Actions workflow for the FPGA_CPU_Verification project: runs all its GHDL tests.
+# GitHub reads every .yml file in the folder .github/workflows at the top of the repo
+# and runs it on its own Linux computer. The run is green if every step ends with exit
 # code 0, and red if any step fails.
 
-name: GHDL tests
+name: FPGA_CPU_Verification
 
-# When to run
+# When to run: only when this project's folder or this file changes
 on:
   push:               # every push, on any branch
+    paths:
+      - "FPGA_CPU_Verification/**"
+      - ".github/workflows/FPGA_CPU_Verification.yml"
   pull_request:       # every pull request
+    paths:
+      - "FPGA_CPU_Verification/**"
+      - ".github/workflows/FPGA_CPU_Verification.yml"
   workflow_dispatch:  # a "Run workflow" button on GitHub, to start it by hand
 
 jobs:
   tests:
     runs-on: ubuntu-24.04
     timeout-minutes: 15   # stop a run that hangs
+    defaults:
+      run:
+        working-directory: FPGA_CPU_Verification   # every command runs inside the project folder
     env:
       UVVM_VERSION: "2026.03.20"                    # same UVVM release as on the PC
       UVVM_LIB: ${{ github.workspace }}/uvvm_lib    # where the compiled UVVM goes; run_ghdl.sh reads it
