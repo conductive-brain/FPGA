@@ -10,6 +10,14 @@ by reading simulation waveforms. This repository adds automated verification: di
 random programs and coverage. The original design had four problems that the waveforms had not shown. Each fix is a separate
 commit together with the test that shows the problem.
 
+## At a glance
+
+- Two versions of one 8-bit CPU: hardwired and microprogrammed control unit.
+- Three self-checking testbenches (`tb_reset`, `tb_cpu`, `tb_model`), run on both versions on every push.
+- 20,000 random instructions checked against a reference model, with functional coverage.
+- Four problems in the original design fixed, each in its own commit.
+- Timing met at 50 MHz on a Cyclone V with more than 12 ns of setup slack.
+
 ## The CPU
 
 | Register | Width  | Role                              |
@@ -58,11 +66,11 @@ scripts/       run_ghdl.ps1 (Windows) and run_ghdl.sh (Linux, Git Bash): run eve
   (`tb/cpu_dut_hw.vhd`, `tb/cpu_dut_micro.vhd`). The wrapper brings the control unit state out to the testbench.
   A return to FETCH1 marks the end of an instruction.
 - **`tb_reset`**: reset puts the control unit in FETCH1 and the CPU fetches its first instruction.
-- **`tb_cpu`**: three hand-written programs with expected values worked out by hand: the original program,
+- **`tb_cpu`**: three programs with expected values worked out by hand: the original program,
   an addition with carries (0x27 + 0x39 = 0x60), and INC from 0xFF to 0x00.
 - **`tb_model`**: compares the CPU with a reference model (`tb/cpu_model_pkg.vhd`) after every instruction.
   The model applies the instruction table directly and uses VHDL's own addition, not the CPU's adder. It runs the
-  two first directed programs, then 100 random programs of 200 instructions each. Random program k uses the seeds
+  first two directed programs, then 100 random programs of 200 instructions each. Random program k uses the seeds
   (G_SEED, k), so any failing program can be run again.
 - **Coverage**: `tb_model` counts what the random programs exercised and fails if any count is zero.
 
@@ -119,8 +127,9 @@ The projects have no pin assignments yet; the clock input is meant for CLOCK_50.
 | hw    | +13.638 ns  | +0.333 ns  | 157.18 MHz         |
 | micro | +12.581 ns  | +0.332 ns  | 134.79 MHz         |
 
-Both CPUs meet the 50 MHz clock with more than 12 ns to spare, and no input or output is left unconstrained. Fmax is
-lower than in the table below because the Fitter stops optimizing once a design meets its target.
+Both CPUs meet the 50 MHz clock with more than 12 ns to spare. The Timing Analyzer reports no unconstrained inputs or
+outputs; reset and the outputs are excluded on purpose (see Constraints). Fmax is lower than in the table below
+because the Fitter stops optimizing once a design meets its target.
 
 ### Fmax before and after the fixes
 
@@ -166,12 +175,16 @@ GHDL settings used in every phase (analyse, elaborate, run):
 | `-frelaxed` | UVVM uses shared variables of plain types, which strict VHDL-2008 does not allow |
 | `-P<dir>`   | Where the compiled UVVM libraries are                                            |
 
-Compile `uvvm_util` (from the UVVM download, into `<dir>/uvvm_util/v08`):
+Download UVVM and compile `uvvm_util` into `$UVVM_LIB/uvvm_util/v08`, the same steps as the GitHub workflow:
 
 ```bash
+git clone --depth 1 --branch 2026.03.20 https://github.com/UVVM/UVVM.git uvvm
+export UVVM_LIB="${USERPROFILE:-$HOME}/tools/uvvm_ghdl"
 mkdir -p "$UVVM_LIB/uvvm_util/v08"
-grep -v '^#' uvvm/uvvm_util/script/compile_order.txt | while read -r f; do
-  ghdl -a --std=08 -frelaxed --work=uvvm_util --workdir="$UVVM_LIB/uvvm_util/v08" "uvvm/uvvm_util/script/$f"
+grep -v '^#' uvvm/uvvm_util/script/compile_order.txt | tr -d '\r' | while read -r f; do
+  if [ -n "$f" ]; then
+    ghdl -a --std=08 -frelaxed --work=uvvm_util --workdir="$UVVM_LIB/uvvm_util/v08" "uvvm/uvvm_util/script/$f" || exit 1
+  fi
 done
 ```
 
