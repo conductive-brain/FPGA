@@ -7,7 +7,7 @@ self-checking UVVM testbench that verifies both. The tests run in GHDL on every 
 
 I designed the CPU and ran it on a Cyclone V board (Terasic DE10-Standard). At the time I checked it
 by reading simulation waveforms. This repository adds automated verification: directed tests, a reference model,
-random programs and coverage. The work found four problems that the waveforms had not shown. Each fix is a separate
+random programs and coverage. The original design had four problems that the waveforms had not shown. Each fix is a separate
 commit together with the test that shows the problem.
 
 ## The CPU
@@ -66,14 +66,14 @@ scripts/       run_ghdl.ps1 (Windows) and run_ghdl.sh (Linux, Git Bash): run eve
   (G_SEED, k), so any failing program can be run again.
 - **Coverage**: `tb_model` counts what the random programs exercised and fails if any count is zero.
 
-## What the tests found
+## Problems in the original design and their fixes
 
 1. **The hw control unit's state counter had no reset.** The board worked only because the FPGA powers up with
    every register at 0.
    - How it showed up: `tb_reset` saw state `UUUU` instead of 0000 (FETCH1).
    - Fix: 0a3c339
-2. **The adder computed A xor B instead of A + B** (hw and micro). XOR raised Fmax, and the original programs never
-   produced a carry, so the waveforms looked right.
+2. **The original adder computed A xor B instead of A + B** (hw and micro). XOR raised Fmax, and the original
+   programs never produced a carry, so the waveforms looked right. The fix restores a ripple-carry adder.
    - How it showed up: in `tb_cpu`, 0x27 + 0x39 gave 0x1E instead of 0x60. `tb_model` also catches it within the
      first random program.
    - Fix: e923b67 (hw), f571dc8 (micro)
